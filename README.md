@@ -1,1 +1,1 @@
-# remind_node.js
+# kiosk_project
