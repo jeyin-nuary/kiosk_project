@@ -20,8 +20,11 @@ router.post('/', async (req, res) => {
 // 게시글 전체 목록 조회 api : 제목, 작성자명, 작성 날짜(날짜 기준 내림차순 정렬) 조회
 router.get('/', async (req, res) => {
     try {
-        await Posts.findAll({},);
-        return res.
+        await Posts.find()
+        .sort({createdAt: -1})
+        .select({"-password -content -__v"});
+        
+        
     } catch (error) {
         
     }
