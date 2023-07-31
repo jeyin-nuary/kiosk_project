@@ -1,32 +1,32 @@
-const mongoose = require('mongoose');
-
-const postsSchema = new mongoose.Schema({
-    user: {
-        type: String,
-        required: true
-    },
-    password: {
-        type: String,
-        // required: 필수로 필요하다 - unique: 유일한 값(새로운 값)
-        required: true
-    },
-    title: {
-        type: String,
-        required: true
-    },
-    content: {
-        type: String,
-        required: true
-    },
-    comment: {
-        type: String,
-        required: true
-    },
-    createAt: {
-        type: Date,
-        required: true,
-        default: Date.now
-    }
+const mongoose = require("mongoose");
+​
+const ObjectId = mongoose.Types.ObjectId;
+​
+const postSchema = new mongoose.Schema({
+  postId: {
+    type: ObjectId,
+    ref: "Comment",
+  },
+  user: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  title: {
+    type: String,
+    required: true,
+  },
+  content: {
+    type: String,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
-
-module.exports = mongoose.model("post", postsSchema);
+​
+module.exports = mongoose.model("Post", postSchema);
