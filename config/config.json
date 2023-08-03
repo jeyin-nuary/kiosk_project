@@ -1,15 +1,23 @@
-require('dotenv').config();
-const env = process.env;
-
-const development = {
-    username: env.DB_USERNAME,
-    password: env.DB_PASSWORD,
-    database: env.DB_DATABASE_NAME,
-    host: env.DB_HOST,
-    dialect: 'mysql',
-};
-
-module.exports = {
-    development
-
-};
+{
+  "development": {
+    "username": "jen0",
+    "password": "2023sparta1040",
+    "database": "nodeBasic",
+    "host": "express-db-node.cl63lekl0vj3.ap-northeast-2.rds.amazonaws.com",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}

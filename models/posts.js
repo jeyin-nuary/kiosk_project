@@ -1,7 +1,5 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Posts extends Model {
     /**
@@ -12,50 +10,52 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       this.belongsTo(models.Users, {
         targetKey: 'userId',
-        foreignKey: 'userId'
-      }),
-      this.hasMany(models.Comments, {
+        foreignKey: 'userId',
+      });
+
+      this.hasMany(models.Posts, {
         sourceKey: 'postId',
-        foreignKey: 'postId'
-      })
+        foreignKey: 'postId',
+      });
     }
   }
-  Posts.init({
-    postId: {
-      allowNull: false,
-      autoIncrement: true,
-      primaryKey: true,
-      type: DataTypes.INTEGER
+  Posts.init(
+    {
+      postId: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: DataTypes.INTEGER,
+      },
+      UserId: {
+        allowNull: false,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Users',
+          key: 'userId',
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+      },
+      content: {
+        type: DataTypes.STRING,
+      },
+      title: {
+        type: DataTypes.STRING,
+      },
+      createdAt: {
+        allowNull: false,
+        type: DataTypes.DATE,
+      },
+      updatedAt: {
+        allowNull: false,
+        type: DataTypes.DATE,
+      },
     },
-    userId: {
-      allowNull: false,
-      type: DataTypes.INTEGER
-    },
-    title: {
-      allowNull: false,
-      type: DataTypes.STRING
-    },
-    content: {
-      allowNull: false,
-      type: DataTypes.STRING
-    },
-    nickname: {
-      allowNull: false,
-      type: DataTypes.STRING
-    },
-    createdAt: {
-      allowNull: false,
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
-    },
-    updatedAt: {
-      allowNull: false,
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
+    {
+      sequelize,
+      modelName: 'Posts', // Posts 모델 클래스를 반환하며 이 모델은 다른 파일에서 가져와 데이터베이스 작업을 수행하는 데 사용된다.
     }
-  }, {
-    sequelize,
-    modelName: 'Posts',
-  });
+  );
   return Posts;
 };

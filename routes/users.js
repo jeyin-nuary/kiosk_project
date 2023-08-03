@@ -1,91 +1,95 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const {Users} = require('../models/users');
+// const authMiddleware = require('../middlewares/auth-middleware');
+// 왜 모델스까지만 불러오는지 공부하기**
+const { Users } = require('../models');
 
+/*회원 가입 API
+ 닉네임, 비밀번호, 비밀번호 확인을 request에서 전달받기
+ 닉네임은 `최소 3자 이상, 알파벳 대소문자(a~z, A~Z), 숫자(0~9)`로 구성하기
+ 비밀번호는 `최소 4자 이상이며, 닉네임과 같은 값이 포함된 경우 회원가입에 실패`로 만들기
+ 비밀번호 확인은 비밀번호와 정확하게 일치하기
+ 데이터베이스에 존재하는 닉네임을 입력한 채 회원가입 버튼을 누른 경우 "중복된 닉네임입니다." 
+ 라는 에러메세지를 response에 포함하기*/
 
-// 회원가입 api
 router.post('/signup', async (req, res) => {
-    try {
-      const {nickname, password, confirmPassword} = req.body;  
+  const { nickname, password, confirmPassword } = req.body; //회원가입에 필요한 데이터를 body데이터에 담아서 요청
+  console.log('req.body:', req.body);
 
-      // 닉네임 유효성 검사: 닉네임은 최소 3자 이상, 알파벳 대소문자(a~z, A~Z), 숫자(0~9)로 구성
-      if (!nickname.length > 3 || !/^[a-zA-Z0-9]+$/.test(nickname)) {
-        return res.status(412).json({errorMessage: '닉네임 형식이 일치하지 않습니다.'});
-      }
+  const nickCheck = /[a-zA-Z0-9]{3,}$/; // 최소 3자 이상, 알파벳 대소문자(a~z, A~Z), 숫자(0~9)`로 구성
 
-      // 닉네임 유효성 검사: 중복된 닉네임
-      const existUser = await Users.findOne({where: {nickname: nickname}});
+  if (!nickCheck.test(nickname)) {
+    // 정규식이 맞는지 확인하는 .test는 자바스크립트에서 제공하는 정규식을 검증하는? 메소드다
+    return res.status(412).json({
+      errorMessage: '닉네임 형식이 일치하지 않습니다.',
+    });
+  }
+  //비밀번호 정규식
+  const pwdCheck = /^.{4,}$/; // pwd는 4글자 이상
+  if (!pwdCheck.test(password) || password.includes(nickname)) {
+    //비밀번호에 닉네임값이 있는지 includes를 사용하여 확인
+    return res.status(412).json({
+      errorMessage:
+        '비밀번호 형식이 일치하지 않거나 닉네임이 포함되어 있습니다.',
+    });
+  }
+  // 비밀번호 확인이 비밀번호와 일치하는지 검사합니다.
+  if (password !== confirmPassword) {
+    return res.status(412).json({
+      errorMessage: '비밀번호 확인이 올바르지 않습니다.',
+    });
+  }
 
-      if (existUser !== nickname) {
-        return res.status(412).json({errorMessage: '중복된 닉네임입니다.'});
-      }
+  try {
+    // 데이터베이스에서 닉네임이 이미 있는지 확인합니다.
+    const existingUser = await Users.findOne({ where: { nickname } });
 
-      // 비밀번호 유효성 검사1: 비밀번호는 최소 4자 이상
-      if (!password.length > 4 ) {
-        return res.status(412).json({errorMessage: '비밀번호 형식이 일치하지 않습니다.'});
-      }
-
-      // 비밀번호 유효성 검사2: 닉네임 불포함
-      if (password.includes(nickname) || nickname.includes(password)) {
-        return res.status(412).json({errorMessage: '비밀번호에 닉네임이 포함되어 있습니다.'});
-      }
-
-      // 비밀번호 유효성 검사3: 비밀번호 확인 일치
-      if (password !== confirmPassword) {
-        return res.status(412).json({errorMessage: '비밀번호의 값이 일치하지 않습니다.'});
-      }
-
-
-      // 회원가입 성공! 뿌슝 빠슝-
-      const newUser = new Users({ nickname, password});
-      await Users.save();
-
-      return res.status(201).send({message: '회원가입을 축하합니다!'});
-
-    } catch (error) {
-        return res.status(400).json({errorMessage: '요청한 데이터 형식이 올바르지 않습니다.'});
+    // 닉네임이 이미 있는 경우, 중복 오류를 반환합니다.
+    if (existingUser) {
+      return res.status(412).json({
+        errorMessage: '중복된 닉네임입니다.',
+      });
     }
-})
 
+    // 회원가입 처리 로직 (닉네임 중복이 없고 모든 검증이 완료되었습니다.)
+  } catch (error) {
+    // 데이터베이스 검색 오류 처리
+    console.error(error);
+    res.status(500).json({
+      errorMessage: '회원 가입 과정 중 오류가 발생했습니다.',
+    });
+  }
+  const newUser = await Users.create({ nickname, email, password }); //사용자에 요청으로 들어온 nickname email password를
+  //newUser라는 변수안에 할당
+  res.status(201).json({
+    message: '회원 가입에 성공하였습니다.',
+    data: newUser,
+  });
+});
 
 // 로그인 api
 router.post('/login', async (req, res) => {
-  try {
-    const {nickname, password} = req.body;
-
-  
-    // 닉네임 또는 비밀번호가 데이터베이스에 등록된 것과 맞는 지 확인, 불일치 시 에러 메시지
-    const existNickname = await Users.findOne({where: {nickname: nickname}});
-    const existPassword = await Users.findOne({where: {password: password}});
-
-    if (existNickname !== nickname || existPassword !== password) {
-      return res.status(412).json({message: '닉네임 또는 비밀번호를 확인해주세요.'});
-    }
-
-    // 로그인 성공 시, 유저 정보 jwt 활용 쿠키 전달
-    // 이 부분 코드 공부 더 필요. 다시 보기
-    const token = jwt.sign({ userId: Users.userId}, "customized-secret-key");
-
-    // jwt를 쿠키로 할당
-    res.cookie("Authorization", `Bearer ${token}`);
-    // jwt를 body로 할당
-    res.status(200).json({ token });
-
-  } catch (error) {
-    return res.status(400).json({errorMessage: ' 로그인에 실패했습니다.'});
+  const { nickname, password } = req.body;
+  const user = await Users.findOne({ where: { nickname: nickname } });
+  if (!user) {
+    return res.status(409).json({
+      errorMessage: '가입되지 않은 아이디입니다. 아이디를 확인해주세요',
+    });
+  } else if (password !== user.password) {
+    return res
+      .status(409)
+      .json({ errMessage: '비밀번호를 확인하여 주십시오.' });
   }
+
+  const token = jwt.sign(
+    {
+      userId: user.userId,
+    },
+    'customized-secret-key'
+  );
+  res.cookie('Authorization', `Bearer ${token}`);
+  return res.json({ message: '로그인 완료' });
 });
-
-
-module.exports = router;
-
-
-
-
-
-
-
-
 
 module.exports = router;
